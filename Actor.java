@@ -1,3 +1,6 @@
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
 
 public abstract class Actor implements TurnBased{
 	private int hp;
@@ -6,6 +9,7 @@ public abstract class Actor implements TurnBased{
 	private char icon;
 	private Stage stage;
 	private char steppedOn;
+	private Color color;
 	public static final String UP = "u";
 	public static final String DOWN = "d";
 	public static final String LEFT = "l";
@@ -17,6 +21,7 @@ public abstract class Actor implements TurnBased{
 	public Actor(char icon){
 		hp = 100;
 		this.icon = icon;
+		color = Color.GREEN;
 	}
 	protected void setStage(int x, int y, Stage stage){
 		this.x = x;
@@ -31,8 +36,28 @@ public abstract class Actor implements TurnBased{
 	public int getY(){
 		return y;
 	}
+	public Color getColor(){
+		return color;
+	}
 	protected boolean isColliding(Actor a){
 		return (a != this && a.getX() == x && a.getY() == y);
+	}
+	protected boolean isBlocked(){
+		for(char c : stage.getFLGame().getBlockers())
+			if(steppedOn == c)
+				return true;
+		return false;
+	}
+	protected boolean isBlocked(int x, int y){
+		for(char c : stage.getFLGame().getBlockers())
+			if(stage.getPoint(x, y) == c)
+				return true;
+		return false;
+	}
+	public Color setColor(Color c){
+		Color old = color;
+		color = c;
+		return old;
 	}
 	public void move(String direction){
 		stage.setPoint(x, y, steppedOn);
@@ -57,8 +82,8 @@ public abstract class Actor implements TurnBased{
 			break;
 		case UP_LEFT:
 			if(stage.isInBounds(x-1, y-1)){
-				y++;
-				x++;
+				y--;
+				x--;
 			}
 			break;
 		case UP_RIGHT:
@@ -86,13 +111,16 @@ public abstract class Actor implements TurnBased{
 		}
 		//Check to see if an actor was already there, if so, move back
 		for(Actor a : stage.getActors())
-			if(isColliding(a)){
+			if(isColliding(a) || isBlocked(x,y)){
 				x = oldX;
 				y = oldY;
-				System.out.println("Is colliding");
+				break;
 			}
 		steppedOn = stage.setPoint(x, y, icon);
 		System.out.println("x: "+x+" y: "+y);
+	}
+	public void onCollide(Actor collidingActor){
+		
 	}
 	public abstract void takeTurn();
 

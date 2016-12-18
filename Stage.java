@@ -3,17 +3,32 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 public class Stage extends JPanel implements TurnBased{
 	private List<Actor> actors;
-	private Tile[][] tiles;
+	private int xMax;
+	private int yMax;
+	private List<Tile> tiles;
+	private Tile[][] tileArr;
 	private FLGame game;
+	private int xoff;
+	private int yoff;
 
 	public Stage(char[][] charset, int xoffset, int yoffset){
-		tiles = new Tile[charset.length][getLongestRowLength(charset)];
+		tiles = new ArrayList<Tile>();
+		xoff = xoffset;
+		yoff = yoffset;
+		//We record the bounds of the map because we are putting the Tiles in a list sorted by draw order
+		xMax = getLongestRowLength(charset);
+		yMax = charset.length;
+		tileArr = new Tile[yMax][xMax];
 		for(int r = 0; r < charset.length; r++)
-			for(int c = 0; c<charset[r].length; c++)
+			for(int c = 0; c<charset[r].length; c++){
 				//Conversion: arr[r][c] -> (c,r)
-				tiles[r][c] = new Tile(charset[r][c], c, r, xoffset, yoffset, Color.GREEN);
+				Tile t = new Tile(charset[r][c], c, r, xoffset, yoffset, Color.GREEN);
+				tiles.add(t);
+				tileArr[r][c] = t;
+			}
 		actors = new ArrayList<Actor>();
 		this.setBackground(Color.BLACK);
 		setActionAndInputMaps();
@@ -35,18 +50,18 @@ public class Stage extends JPanel implements TurnBased{
 	}
 	public boolean isInBounds(int x, int y){
 		//Conversion: (x,y) -> charset[y][x]
-		if(y >-1 && y < tiles.length)
-			if(x > -1 && x < tiles[y].length)
+		if(y >-1 && y < yMax)
+			if(x > -1 && x < xMax)
 				return true;
 		return false;
 	}
 	public char getPoint(int x, int y){
-		//Conversion: (x,y) -> charset[y][x]
-		return tiles[y][x].getChar();
+		//Conversion: (x,y) -> tileArr[y][x]
+		return tileArr[y][x].getChar();
 	}
 	public char setPoint(int x, int y, char c){
-		//Conversion: (x,y) -> arr[y][x]
-		return tiles[y][x].setChar(c);
+		//Conversion: (x,y) -> tileArr[y][x]
+		return tileArr[y][x].setChar(c);
 	}
 	public List<Actor> getActors(){
 		return actors;
@@ -65,19 +80,35 @@ public class Stage extends JPanel implements TurnBased{
 		im.put(KeyStroke.getKeyStroke("DOWN"), "down");
 		im.put(KeyStroke.getKeyStroke("LEFT"), "left");
 		im.put(KeyStroke.getKeyStroke("RIGHT"), "right");
-		im.put(KeyStroke.getKeyStroke("KP_UP"), "up");
-		im.put(KeyStroke.getKeyStroke("KP_DOWN"), "down");
+		im.put(KeyStroke.getKeyStroke("NUMPAD8"), "up");
+		im.put(KeyStroke.getKeyStroke("NUMPAD2"), "down");
+		im.put(KeyStroke.getKeyStroke("NUMPAD4"), "left");
+		im.put(KeyStroke.getKeyStroke("NUMPAD6"), "right");
+		im.put(KeyStroke.getKeyStroke("NUMPAD7"), "upLeft");
+		im.put(KeyStroke.getKeyStroke("NUMPAD9"), "upRight");
+		im.put(KeyStroke.getKeyStroke("NUMPAD1"), "downLeft");
+		im.put(KeyStroke.getKeyStroke("NUMPAD3"), "downRight");
+		im.put(KeyStroke.getKeyStroke("ESCAPE"), "escape");
 
 		am.put("up", upAction);
 		am.put("down", downAction);
 		am.put("left", leftAction);
 		am.put("right", rightAction);
+		am.put("upLeft", upLeftAction);
+		am.put("upRight", upRightAction);
+		am.put("downLeft", downLeftAction);
+		am.put("downRight", downRightAction);
+		am.put("escape", escapeAction);
 	}
 	@Override
 	public void takeTurn() {
 
 	}
-
+	private Action escapeAction;
+	public void setEscapeAction(Action a){
+		escapeAction = a;
+		setActionAndInputMaps();
+	}
 	private Action upAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
@@ -114,11 +145,54 @@ public class Stage extends JPanel implements TurnBased{
 			game.endTurn();
 		}
 	};
+	private Action upLeftAction = new AbstractAction(){
+		@Override
+		public void actionPerformed(ActionEvent e){
+			for(Actor a : actors)
+				if(a instanceof Player)
+					a.move(Actor.UP_LEFT);
+			game.endTurn();
+		}
+	};
+	private Action upRightAction = new AbstractAction(){
+		@Override
+		public void actionPerformed(ActionEvent e){
+			for(Actor a : actors)
+				if(a instanceof Player)
+					a.move(Actor.UP_RIGHT);
+			game.endTurn();
+		}
+	};
+	private Action downLeftAction = new AbstractAction(){
+		@Override
+		public void actionPerformed(ActionEvent e){
+			for(Actor a : actors)
+				if(a instanceof Player)
+					a.move(Actor.DOWN_LEFT);
+			game.endTurn();
+		}
+	};
+	private Action downRightAction = new AbstractAction(){
+		@Override
+		public void actionPerformed(ActionEvent e){
+			for(Actor a : actors)
+				if(a instanceof Player)
+					a.move(Actor.DOWN_RIGHT);
+			game.endTurn();
+		}
+	};
 	public void paintComponent(Graphics g){
 		super.paintComponent(g);
-		for(Tile[] arr : tiles)
-			for(Tile tile : arr)
-				tile.paint(g);
+		Comparator<Tile> comp = new Comparator<Tile>(){
+			@Override
+			public int compare(Tile o1, Tile o2) {
+				return o2.getDrawOrder() - o1.getDrawOrder();
+			}
+		};
+		tiles.sort(comp);
+		for(Tile tile: tiles)
+			tile.paint(g);
+
 	}
 	protected class Tile{
 		private Color color;
@@ -127,7 +201,8 @@ public class Stage extends JPanel implements TurnBased{
 		private int y;
 		private int xoff;
 		private int yoff;
-		public static final int FONT_SIZE = 18;
+		private int drawOrder;
+		public static final int FONT_SIZE = 24;
 
 		public Tile(char icon, int x, int y, int xoffset, int yoffset, Color col){
 			this.icon = icon;
@@ -136,8 +211,10 @@ public class Stage extends JPanel implements TurnBased{
 			xoff = xoffset;
 			yoff = yoffset;
 			color = col;
+			drawOrder = Character.getType(icon);
 		}
 
+		public int getDrawOrder(){return drawOrder;}
 		public void setColor(Color col){
 			color = col;
 		}
@@ -151,17 +228,31 @@ public class Stage extends JPanel implements TurnBased{
 		}
 		public void paint(Graphics g){
 			String s = Character.toString(icon);
+			boolean is28 = Character.getType(icon) == 28;
+			int offset = 2;
+			//		System.out.println("Type of " + s +Character.getType(icon));
+			//A character that is type 28 is bigger and off-center, so we fixx that shizzle mah nizzle
 			int xpos = xoff + x*FONT_SIZE;
-			int ypos = yoff + y*FONT_SIZE;
-			
+			int ypos = yoff + y*(FONT_SIZE);
+
+			//Save the old shit so we can put it back later
 			Color old = g.getColor();
 			Font oldFont = g.getFont();
+			
+			//Draw a black box behind the thing
 			g.setColor(Color.BLACK);
 			g.drawRect(xpos, ypos, FONT_SIZE, FONT_SIZE);
+
+			//Draw the thing
 			g.setColor(color);
-			g.setFont(new Font(Font.MONOSPACED, Font.PLAIN, FONT_SIZE));
+			g.setFont(Font.decode("PxPlus IBM BIOS-"+FONT_SIZE));
+			//If its an actor, make it the actor's color
+			for(Actor a : actors)
+				if(a.getX() == x && a.getY() == y)
+					g.setColor(a.getColor());
 			g.drawString(s, xpos, ypos);
 
+			//Remember what I said about keeping the shit so we could put it back?
 			g.setColor(old);
 			g.setFont(oldFont);
 		}

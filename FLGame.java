@@ -1,5 +1,8 @@
 import java.util.*;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+
 import javax.swing.*;
 import java.util.List;
 
@@ -9,11 +12,28 @@ public class FLGame {
 	private JFrame gameWindow;
 	private Stage activeStage;
 	private Menu activeMenu;
+	private char[] blockers = {
+			'\u2588',
+			'\u2554',
+			'\u2550',
+			'\u2551',
+			'\u255A',
+			'\u2557',
+			'\u255D'
+	};
 
 	public FLGame(Menu startingMenu, int width, int height){
+		//Load in the CodePage 437 TrueType font
+		try{
+			GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			ge.registerFont(Font.createFont(Font.TRUETYPE_FONT, new File("src/CP437.ttf")));
+		}
+		catch(IOException|FontFormatException e){
+			e.printStackTrace();
+		}
 		//Initialize lists
 		turnBased = new ArrayList<TurnBased>();
-
+		
 		//Make the game window, set the size, make sure it closes, not resizable
 		gameWindow = new JFrame("New Home WIP");
 		gameWindow.setPreferredSize(new Dimension(width,height));
@@ -31,6 +51,9 @@ public class FLGame {
 	}
 	public void endGame(){
 		isRunning = false;
+	}
+	public char[] getBlockers(){
+		return blockers;
 	}
 	public void setStage(Stage stage){
 		addStage(stage);
