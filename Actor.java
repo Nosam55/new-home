@@ -6,6 +6,8 @@ public abstract class Actor implements TurnBased{
 	private int hp;
 	private int x;
 	private int y;
+	private int oldX;
+	private int oldY;
 	private char icon;
 	private Stage stage;
 	private char steppedOn;
@@ -21,14 +23,16 @@ public abstract class Actor implements TurnBased{
 	public Actor(char icon){
 		hp = 100;
 		this.icon = icon;
-		color = Color.GREEN;
+		color = Color.WHITE;
 	}
 	protected void setStage(int x, int y, Stage stage){
 		this.x = x;
 		this.y = y;
+		oldX = x;
+		oldY = y;
 		this.stage = stage;
-		steppedOn = stage.getPoint(x, y);
-		stage.setPoint(x, y, icon);
+		steppedOn = stage.setPoint(x, y, icon);
+		System.out.println( this +" is stepping on "+steppedOn);
 	}
 	public int getX(){
 		return x;
@@ -44,7 +48,7 @@ public abstract class Actor implements TurnBased{
 	}
 	protected boolean isBlocked(){
 		for(char c : stage.getFLGame().getBlockers())
-			if(steppedOn == c)
+			if(stage.getPoint(x, y) == c)
 				return true;
 		return false;
 	}
@@ -54,15 +58,19 @@ public abstract class Actor implements TurnBased{
 				return true;
 		return false;
 	}
+	public void onExit(){
+		stage.setPoint(oldX, oldY, steppedOn);
+	}
 	public Color setColor(Color c){
 		Color old = color;
 		color = c;
 		return old;
 	}
-	public void move(String direction){
+	public boolean move(String direction){
+		boolean moved = true;
+		oldX = x;
+		oldY = y;
 		stage.setPoint(x, y, steppedOn);
-		int oldX = x;
-		int oldY = y;
 		switch(direction){
 		case UP:
 			if(stage.isInBounds(x, y-1))
@@ -106,21 +114,37 @@ public abstract class Actor implements TurnBased{
 			break;
 		default:
 			//TODO Add toString()s for all this stuff
-			System.err.println("Invalid direction in actor");
+			System.err.println("Invalid direction in "+this);
 			break;
+		}
+		if(isBlocked()){
+			x = oldX;
+			y = oldY;
+			moved = false;
 		}
 		//Check to see if an actor was already there, if so, move back
 		for(Actor a : stage.getActors())
-			if(isColliding(a) || isBlocked(x,y)){
-				x = oldX;
-				y = oldY;
+			if(isColliding(a)){
+				if(a instanceof MapChange){
+					a.onCollide(this);
+					return true;
+				}
+				onCollide(a);
 				break;
 			}
 		steppedOn = stage.setPoint(x, y, icon);
-		System.out.println("x: "+x+" y: "+y);
+		System.out.println( this +" moved to "+steppedOn);
+		return moved;
 	}
 	public void onCollide(Actor collidingActor){
-		
+		x = oldX;
+		y = oldY;
+	}
+	public Stage getStage(){
+		return stage;
+	}
+	public String toString(){
+		return "actor with icon "+icon+" at "+x+", "+y;
 	}
 	public abstract void takeTurn();
 

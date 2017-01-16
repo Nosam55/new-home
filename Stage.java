@@ -41,6 +41,10 @@ public class Stage extends JPanel implements TurnBased{
 		else
 			a.setStage(0, 0, this);
 	}
+	public void removeActor(Actor a){
+		a.onExit();
+		actors.remove(a);
+	}
 	private static int getLongestRowLength(char[][] arr){
 		int longestLength = 0;
 		for(char[] a : arr)
@@ -112,6 +116,7 @@ public class Stage extends JPanel implements TurnBased{
 	private Action upAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
+			System.out.println("est");
 			for(Actor a : actors)
 				if(a instanceof Player)
 					a.move(Actor.UP);
@@ -202,7 +207,7 @@ public class Stage extends JPanel implements TurnBased{
 		private int xoff;
 		private int yoff;
 		private int drawOrder;
-		public static final int FONT_SIZE = 24;
+		public static final int FONT_SIZE = 25;
 
 		public Tile(char icon, int x, int y, int xoffset, int yoffset, Color col){
 			this.icon = icon;

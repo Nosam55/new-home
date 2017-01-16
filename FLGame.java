@@ -72,8 +72,9 @@ public class FLGame {
 
 			@Override
 			public void run() {
-				while(!stage.isFocusOwner())
+				while(!stage.isFocusOwner()){
 					stage.requestFocusInWindow();
+				}
 				stage.repaint();
 			}
 			

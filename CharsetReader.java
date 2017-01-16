@@ -4,6 +4,9 @@ import java.util.*;
 public class CharsetReader {
 	private File file;
 	public CharsetReader(String filename){
+		setFile(filename);
+	}
+	public void setFile(String filename){
 		file = new File(filename);
 	}
 	public char[][] getChars(){
