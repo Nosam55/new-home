@@ -11,10 +11,12 @@ public class Stage extends JPanel implements TurnBased{
 	private List<Tile> tiles;
 	private Tile[][] tileArr;
 	private FLGame game;
+	private boolean isCentered;
 	private int xoff;
 	private int yoff;
 
 	public Stage(char[][] charset, int xoffset, int yoffset){
+		isCentered = false;
 		tiles = new ArrayList<Tile>();
 		xoff = xoffset;
 		yoff = yoffset;
@@ -25,7 +27,7 @@ public class Stage extends JPanel implements TurnBased{
 		for(int r = 0; r < charset.length; r++)
 			for(int c = 0; c<charset[r].length; c++){
 				//Conversion: arr[r][c] -> (c,r)
-				Tile t = new Tile(charset[r][c], c, r, xoffset, yoffset, Color.GREEN);
+				Tile t = new Tile(charset[r][c], c, r, xoffset, yoffset, Color.GREEN, this);
 				tiles.add(t);
 				tileArr[r][c] = t;
 			}
@@ -33,6 +35,18 @@ public class Stage extends JPanel implements TurnBased{
 		this.setBackground(Color.BLACK);
 		setActionAndInputMaps();
 	}
+	public void centerMap(){
+		centerMap(true);
+	}
+	public void centerMap(boolean b){
+
+		if(isCentered && !b)
+			for(Tile t : tiles)
+				t.setOffset(xoff, yoff);
+
+		isCentered = b;
+	}
+
 	public void addActor(Actor a, int x, int y){
 		//Eventually the list will be sorted by something like agility
 		actors.add(a);
@@ -69,6 +83,9 @@ public class Stage extends JPanel implements TurnBased{
 	}
 	public List<Actor> getActors(){
 		return actors;
+	}
+	protected Tile[][] getArr(){
+		return tileArr;
 	}
 	protected void setFLGame(FLGame game){
 		this.game = game;
@@ -108,6 +125,7 @@ public class Stage extends JPanel implements TurnBased{
 	public void takeTurn() {
 
 	}
+	//TODO: Make all the actions synchronized
 	private Action escapeAction;
 	public void setEscapeAction(Action a){
 		escapeAction = a;
@@ -116,74 +134,89 @@ public class Stage extends JPanel implements TurnBased{
 	private Action upAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			System.out.println("est");
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.UP);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.UP);
+				game.endTurn();
+			}
 		}
 	};
 	private Action downAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.DOWN);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.DOWN);
+				game.endTurn();
+			}
 		}
 	};
 	private Action leftAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.LEFT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.LEFT);
+				game.endTurn();
+			}
 		}
 	};
 	private Action rightAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.RIGHT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.RIGHT);
+				game.endTurn();
+			}
 		}
 	};
 	private Action upLeftAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.UP_LEFT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.UP_LEFT);
+				game.endTurn();
+			}
 		}
 	};
 	private Action upRightAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.UP_RIGHT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.UP_RIGHT);
+				game.endTurn();
+			}
 		}
 	};
 	private Action downLeftAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.DOWN_LEFT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.DOWN_LEFT);
+				game.endTurn();
+			}
 		}
 	};
 	private Action downRightAction = new AbstractAction(){
 		@Override
 		public void actionPerformed(ActionEvent e){
-			for(Actor a : actors)
-				if(a instanceof Player)
-					a.move(Actor.DOWN_RIGHT);
-			game.endTurn();
+			synchronized(this){
+				for(Actor a : actors)
+					if(a instanceof Player)
+						a.move(Actor.DOWN_RIGHT);
+				game.endTurn();
+			}
 		}
 	};
 	public void paintComponent(Graphics g){
@@ -207,15 +240,17 @@ public class Stage extends JPanel implements TurnBased{
 		private int xoff;
 		private int yoff;
 		private int drawOrder;
+		private Stage myStage;
 		public static final int FONT_SIZE = 25;
 
-		public Tile(char icon, int x, int y, int xoffset, int yoffset, Color col){
+		public Tile(char icon, int x, int y, int xoffset, int yoffset, Color col, Stage stage){
 			this.icon = icon;
 			this.x = x;
 			this.y = y;
 			xoff = xoffset;
 			yoff = yoffset;
 			color = col;
+			myStage = stage;
 			drawOrder = Character.getType(icon);
 		}
 
@@ -231,7 +266,17 @@ public class Stage extends JPanel implements TurnBased{
 			icon = c;
 			return old;
 		}
+		public void setOffset(int x, int y){
+			xoff = x;
+			yoff = y; 
+		}
 		public void paint(Graphics g){
+			if(isCentered){
+				int arrWid = myStage.getArr()[0].length;
+				int arrLen = myStage.getArr().length;
+				xoff = myStage.getWidth()/2 - arrWid*FONT_SIZE/2;
+				yoff = myStage.getHeight()/2 - arrLen*FONT_SIZE/2;
+			}
 			String s = Character.toString(icon);
 			boolean is28 = Character.getType(icon) == 28;
 			int offset = 2;
@@ -243,10 +288,10 @@ public class Stage extends JPanel implements TurnBased{
 			//Save the old shit so we can put it back later
 			Color old = g.getColor();
 			Font oldFont = g.getFont();
-			
+
 			//Draw a black box behind the thing
 			g.setColor(Color.BLACK);
-			g.drawRect(xpos, ypos, FONT_SIZE, FONT_SIZE);
+			//g.fillRect(xpos, ypos, FONT_SIZE, FONT_SIZE); this does not fulfill its intended purpose
 
 			//Draw the thing
 			g.setColor(color);
@@ -257,7 +302,7 @@ public class Stage extends JPanel implements TurnBased{
 					g.setColor(a.getColor());
 			g.drawString(s, xpos, ypos);
 
-			//Remember what I said about keeping the shit so we could put it back?
+			//Remember what I said about keeping that shit so we could put it back?
 			g.setColor(old);
 			g.setFont(oldFont);
 		}

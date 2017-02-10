@@ -17,10 +17,42 @@ public class GameRunner {
 		Stage stage2 = new Stage(charset, 150,150);
 		//Make the guy that moves
 		Actor rando = new Actor('@'){
-
+			private int i = 0;
+			public void onCollide(Actor a){
+				super.onCollide(a);
+				a.damage(13);
+			}
 			@Override
 			public void takeTurn() {
-				this.move(UP);
+				int rand = i < 4 ? 6 : 2;
+				switch(rand){
+				case 0:
+					this.move(RIGHT);
+					break;
+				case 1:
+					this.move(UP_RIGHT);
+					break;
+				case 2: 
+					this.move(UP);
+					break;
+				case 3: 
+					this.move(UP_LEFT);
+					break;
+				case 4:
+					this.move(LEFT);
+					break;
+				case 5:
+					this.move(DOWN_LEFT);
+					break;
+				case 6:
+					this.move(DOWN);
+					break;
+				case 7:
+					this.move(DOWN_RIGHT);
+					break;
+				}
+				i++;
+				i %= 8;
 			}};
 		//When you hit escape this is what happens
 		Action escapeMenuAction = new AbstractAction(){
@@ -31,10 +63,10 @@ public class GameRunner {
 		stage.setEscapeAction(escapeMenuAction);
 		//Set the guys color & add him
 		rando.setColor(new Color(0xFFFFFF));
-		stage.addActor(rando, 4, 5);
+		stage.addActor(rando, 6, 5);
 		//Same with the player
 		Player player = new Player('\u263A');
-		player.setColor(new Color(0x07700));
+		player.setColor(Color.WHITE);
 		stage.addActor(player, 2, 2);
 		//Blank action(for testing/placeholder)
 		Action action = new AbstractAction(){
@@ -66,11 +98,14 @@ public class GameRunner {
 				System.exit(0);
 			}
 		};
-		//Map Changer
+		//Center the maps
+		stage.centerMap();
+		stage2.centerMap();
+		//Map Changers
 		Actor tp = new MapChange('#', stage2, 6, 0); 
 		stage.addActor(tp, 6, 9);
-		Actor tp2 = new MapChange('#', stage, 6, 0);
-		stage2.addActor(tp2, 6,9);
+		Actor tp2 = new MapChange('#', stage, 6, 9);
+		stage2.addActor(tp2, 6,0);
 		//Dummy options
 		MenuOption play = new MenuOption("Play", playGame);
 		MenuOption quit = new MenuOption("Quit", quitAction);
@@ -91,6 +126,8 @@ public class GameRunner {
 		menu.addOption(settings);
 		menu.addOption(quit);
 		FLGame game = new FLGame(menu,800,600);
-		System.out.println((char)3);
+		game.addStage(stage2);
+		game.addStage(stage);
+		System.out.println("");
 	}
 }

@@ -12,6 +12,7 @@ public class MapChange extends Actor{
 	
 	@Override
 	public void onCollide(Actor collidingActor){
+		super.onCollide(collidingActor);
 		collidingActor.getStage().removeActor(collidingActor);
 		to.addActor(collidingActor, x, y);
 		if(collidingActor instanceof Player)

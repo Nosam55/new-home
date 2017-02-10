@@ -40,6 +40,9 @@ public abstract class Actor implements TurnBased{
 	public int getY(){
 		return y;
 	}
+	public void damage(int amt){
+		hp -= amt;
+	}
 	public Color getColor(){
 		return color;
 	}
@@ -60,6 +63,9 @@ public abstract class Actor implements TurnBased{
 	}
 	public void onExit(){
 		stage.setPoint(oldX, oldY, steppedOn);
+	}
+	public int getHp(){
+		return hp;
 	}
 	public Color setColor(Color c){
 		Color old = color;
